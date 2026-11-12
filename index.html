@@ -1,0 +1,325 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор экономии — Syntonik62</title>
+<style>
+  :root{
+    --bg:#0f1215;
+    --card:#1e2328;
+    --card-2:#2c3339;
+    --line:#4a525a;
+    --text:#ffffff;
+    --muted:#c5ccd3;
+    --accent:#ff9433;
+    --good:#4dffa0;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    line-height:1.5;
+    padding:32px 16px 64px;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:960px;margin:0 auto}
+  h2{font-size:26px;margin:0 0 24px;letter-spacing:-.02em;color:var(--text)}
+  .calc{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px;
+  }
+  @media(max-width:760px){
+    .calc{grid-template-columns:1fr;padding:18px}
+    h2{font-size:22px}
+  }
+
+
+  /* ── ползунки ── */
+  .field{margin-bottom:24px}
+  .field:last-child{margin-bottom:0}
+  .field label{
+    display:flex;justify-content:space-between;align-items:baseline;
+    gap:8px;font-size:15px;color:var(--muted);margin-bottom:12px;
+  }
+  .field output{
+    color:var(--text);font-weight:800;font-size:16px;white-space:nowrap;
+  }
+  input[type=range]{
+    touch-action:pan-x;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-appearance:none;appearance:none;
+    width:100%;height:8px;border-radius:4px;
+    background:#4f5962;
+    outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:26px;height:26px;border-radius:50%;
+    background:var(--accent);
+    border:3px solid #ffffff;
+    box-shadow:0 0 0 2px var(--accent), 0 3px 8px rgba(0,0,0,.55);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:26px;height:26px;border-radius:50%;
+    background:var(--accent);
+    border:3px solid #ffffff;
+    box-shadow:0 0 0 2px var(--accent), 0 3px 8px rgba(0,0,0,.55);
+    cursor:pointer;
+  }
+
+
+  /* ── результаты ── */
+  .calc__result{
+    background:var(--card-2);
+    border-radius:12px;
+    padding:22px;
+    display:flex;flex-direction:column;
+  }
+  .calc__label{
+    margin:0 0 14px;font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);font-weight:700;
+  }
+  .calc__rows{margin:0 0 18px;display:flex;flex-direction:column;gap:12px}
+  .calc__rows > div{display:flex;justify-content:space-between;gap:12px}
+  .calc__rows dt{color:var(--muted);font-size:15px}
+  .calc__rows dd{margin:0;font-weight:800;font-size:16px;text-align:right;color:var(--text)}
+  .good{color:var(--good)}
+
+
+  .calc__hero{
+    background:linear-gradient(135deg,#2b2116,#3a2716);
+    border:1px solid #4a3218;
+    border-radius:10px;
+    padding:16px 18px;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    margin-bottom:16px;
+  }
+  .calc__hero-label{font-size:14px;color:#f2d4ab;font-weight:600}
+  .calc__hero-value{
+    font-size:26px;font-weight:800;color:var(--accent);white-space:nowrap;
+    text-shadow:0 0 16px rgba(255,148,51,.5);
+  }
+
+
+  .calc__foot{font-size:14px;color:var(--muted);line-height:1.7;margin:0 0 18px}
+  .calc__foot b{color:var(--text);font-weight:800}
+
+
+  /* ── блок «чистая экономия за год» ── */
+  .calc__profit{
+    margin-top:auto;
+    background:rgba(77,255,160,.10);
+    border:1px solid rgba(77,255,160,.45);
+    border-radius:12px;
+    padding:16px 18px;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+  }
+  .calc__profit-label{
+    font-size:14px;font-weight:700;color:#dffbea;line-height:1.35;
+  }
+  .calc__profit-value{
+    font-size:30px;font-weight:800;color:var(--good);white-space:nowrap;
+    letter-spacing:-.02em;
+    text-shadow:0 0 22px rgba(77,255,160,.5);
+  }
+  @media(max-width:420px){
+    .calc__profit{flex-direction:column;align-items:flex-start}
+    .calc__profit-value{font-size:26px}
+  }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <h2>Посчитайте, сколько сэкономите лично вы</h2>
+
+
+  <div class="calc">
+    <div class="calc__inputs">
+      <div class="field">
+        <label for="consumption">Средний расход <output id="consumption-out">10</output> л/100 км</label>
+        <input type="range" id="consumption" oninput="window.syntonikUpdate && window.syntonikUpdate()" onchange="window.syntonikUpdate && window.syntonikUpdate()" min="5" max="50" step="0.5" value="10">
+      </div>
+      <div class="field">
+        <label for="mileage">Пробег в месяц <output id="mileage-out">2 000</output> км</label>
+        <input type="range" id="mileage" oninput="window.syntonikUpdate && window.syntonikUpdate()" onchange="window.syntonikUpdate && window.syntonikUpdate()" min="500" max="15000" step="500" value="2000">
+      </div>
+      <div class="field">
+        <label for="price">Цена топлива <output id="price-out">65</output> ₽/л</label>
+        <input type="range" id="price" oninput="window.syntonikUpdate && window.syntonikUpdate()" onchange="window.syntonikUpdate && window.syntonikUpdate()" min="60" max="100" step="1" value="65">
+      </div>
+      <div class="field">
+        <label for="saving">Ожидаемая экономия <output id="saving-out">20</output> %</label>
+        <input type="range" id="saving" oninput="window.syntonikUpdate && window.syntonikUpdate()" onchange="window.syntonikUpdate && window.syntonikUpdate()" min="10" max="35" step="1" value="20">
+      </div>
+    </div>
+
+
+    <div class="calc__result">
+      <p class="calc__label">Ваша выгода</p>
+      <dl class="calc__rows">
+        <div><dt>Расход топлива</dt><dd><span id="r-liters">200</span> л/мес</dd></div>
+        <div><dt>Затраты сейчас</dt><dd><span id="r-cost">13 000</span> ₽/мес</dd></div>
+        <div><dt>Экономия в месяц</dt><dd class="good"><span id="r-save-month">2 600</span> ₽</dd></div>
+      </dl>
+
+
+      <div class="calc__hero">
+        <span class="calc__hero-label">Экономия за год</span>
+        <span class="calc__hero-value" id="r-save-year">31 200 ₽</span>
+      </div>
+
+
+      <p class="calc__foot">
+        При вашем пробеге набора 100 мл хватит на <b id="r-months">5,0</b> мес.<br>
+        При вашем пробеге 1 литра Синтоник хватит на <b id="r-months-liter">50,0</b> мес.
+      </p>
+
+
+      <div class="calc__profit">
+        <span class="calc__profit-label">Чистая экономия за год</span>
+        <span class="calc__profit-value" id="r-profit">25 920 ₽</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function () {
+  'use strict';
+  var ids = ['consumption', 'mileage', 'price', 'saving'];
+  var PRICE_LITER = 22000;
+  var LITERS_100ML = 1000;
+  var LITERS_LITER = 10000;
+  var lastValues = '';
+  var changes = 0;
+  var diagnostic = null;
+  var debug = /(?:\?|&)debug=1(?:&|$)/.test(window.location.search);
+
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) {
+    n = Math.round(Number(n));
+    if (!isFinite(n)) n = 0;
+    var neg = n < 0;
+    var s = String(Math.abs(n));
+    var out = '';
+    while (s.length > 3) {
+      out = ' ' + s.slice(-3) + out;
+      s = s.slice(0, -3);
+    }
+    return (neg ? '-' : '') + s + out;
+  }
+  function fmt1(n) {
+    n = Number(n);
+    if (!isFinite(n)) n = 0;
+    return n.toFixed(1).replace('.', ',');
+  }
+  function setText(id, value) {
+    var element = $(id);
+    if (element) element.textContent = value;
+  }
+  function num(id) {
+    var element = $(id);
+    if (!element) return 0;
+    var n = parseFloat(element.value);
+    return isFinite(n) ? n : 0;
+  }
+  function showDebug(message) {
+    if (!debug) return;
+    if (!diagnostic) {
+      diagnostic = document.createElement('pre');
+      diagnostic.setAttribute('style', 'white-space:pre-wrap;background:#121212;color:#fff;border:1px solid #ff9433;padding:12px;border-radius:8px;font:12px monospace;overflow-wrap:anywhere');
+      var wrap = document.querySelector('.wrap');
+      if (wrap) wrap.appendChild(diagnostic);
+    }
+    if (diagnostic) diagnostic.textContent = message;
+  }
+  function update() {
+    try {
+      for (var i = 0; i < ids.length; i++) {
+        if (!$(ids[i])) return;
+      }
+      var consumption = num('consumption');
+      var mileage = num('mileage');
+      var price = num('price');
+      var saving = num('saving');
+      var signature = [consumption, mileage, price, saving].join('|');
+      if (signature !== lastValues) { changes++; lastValues = signature; }
+
+      setText('consumption-out', String(consumption));
+      setText('mileage-out', fmt(mileage));
+      setText('price-out', String(price));
+      setText('saving-out', String(saving));
+
+      var liters = consumption * mileage / 100;
+      var cost = liters * price;
+      var saveMonth = cost * saving / 100;
+      var saveYear = saveMonth * 12;
+      var months100 = liters > 0 ? LITERS_100ML / liters : 0;
+      var monthsLiter = liters > 0 ? LITERS_LITER / liters : 0;
+      var profit = saveYear - (monthsLiter > 0 ? (PRICE_LITER / monthsLiter) * 12 : 0);
+
+      setText('r-liters', fmt(liters));
+      setText('r-cost', fmt(cost));
+      setText('r-save-month', fmt(saveMonth));
+      setText('r-save-year', fmt(saveYear) + ' ₽');
+      setText('r-months', fmt1(months100));
+      setText('r-months-liter', fmt1(monthsLiter));
+      setText('r-profit', fmt(profit) + ' ₽');
+      showDebug('JavaScript: работает; изменений значений: ' + changes + '\n' +
+        'Расход | пробег | цена | экономия: ' + signature + '\n' +
+        'Месячная экономия: ' + fmt(saveMonth) + ' ₽');
+    } catch (error) {
+      showDebug('Ошибка JavaScript: ' + String(error));
+      if (window.console && console.error) console.error('Syntonik calculator:', error);
+    }
+  }
+
+  // Доступно из HTML-атрибутов oninput/onchange, включая мобильный Safari.
+  window.syntonikUpdate = update;
+  window._calcUpdate = update;
+
+  function attachEvents() {
+    for (var i = 0; i < ids.length; i++) {
+      var el = $(ids[i]);
+      if (!el) continue;
+      el.addEventListener('input', update, false);
+      el.addEventListener('change', update, false);
+      el.addEventListener('keyup', update, false);
+      el.addEventListener('touchmove', update, { passive: true });
+      el.addEventListener('touchend', update, false);
+      el.addEventListener('pointerup', update, false);
+    }
+    update();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachEvents, false);
+  } else {
+    attachEvents();
+  }
+
+  // Резервный механизм для iOS: сверяем значения независимо от событий.
+  // На страницах с заблокированным JavaScript этот механизм также не сработает.
+  setInterval(function () {
+    if (!document.hidden) update();
+  }, 150);
+  window.addEventListener('pageshow', update, false);
+  window.addEventListener('focus', update, false);
+  document.addEventListener('visibilitychange', update, false);
+})();
+</script>
+
+
+</body>
+</html>
