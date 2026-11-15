@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050807">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Синтоник">
+<title>Синтоник — калькулятор выгоды</title>
+<style>
+:root{
+  --bg:#050807;
+  --card1:rgba(18,31,24,.86);
+  --card2:rgba(9,16,12,.90);
+  --line:rgba(74,222,128,.14);
+  --line2:rgba(74,222,128,.30);
+  --txt:#dcebe1;
+  --muted:#8aa295;
+  --green:#4ade80;
+  --red:#f87171;
+  --field:rgba(4,9,7,.85);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;padding:18px 14px 40px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color:var(--txt);background:var(--bg);min-height:100vh;
+}
+/* ---- ФОН ---- */
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden;background:var(--bg)}
+.bg svg{width:100%;height:100%;display:block}
+.bg::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.22) 2px 4px);
+  opacity:.35;
+}
+/* ---- КОНТЕНТ ---- */
+h1{font-size:18px;margin:0 0 4px;letter-spacing:.3px;color:#eafff3}
+.sub{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+.card{
+  background:linear-gradient(180deg,var(--card1),var(--card2));
+  border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 8px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(74,222,128,.06);
+}
+.card-title{font-size:11.5px;letter-spacing:1.2px;text-transform:uppercase;
+  color:#6f887a;margin:0 0 10px;font-weight:600}
+.row{margin-bottom:11px}
+.row:last-child{margin-bottom:0}
+label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.field{display:flex;gap:8px;align-items:stretch}
+.step{
+  width:46px;min-width:46px;flex:0 0 46px;border-radius:12px;
+  border:1px solid var(--line2);background:rgba(74,222,128,.06);
+  color:var(--green);font-size:22px;font-weight:700;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;user-select:none;padding:0;
+  transition:background .15s, transform .05s;
+}
+.step:active{background:rgba(74,222,128,.2);transform:scale(.96)}
+input{
+  flex:1;min-width:0;width:100%;
+  padding:12px 12px;font-size:17px;font-weight:600;text-align:center;
+  color:#eafff3;background:var(--field);
+  border:1px solid rgba(74,222,128,.18);border-radius:12px;
+  outline:none;font-variant-numeric:tabular-nums;
+  -webkit-appearance:none;appearance:none;
+}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+input:focus{
+  border-color:var(--green);
+  box-shadow:0 0 0 3px rgba(74,222,128,.15),0 0 18px rgba(74,222,128,.12);
+  background:rgba(6,14,10,.95);
+}
+.hint{font-size:11.5px;color:#6f887a;margin:-4px 2px 12px;line-height:1.4}
+/* справочный блок */
+.ref{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding:9px 0;border-bottom:1px solid rgba(74,222,128,.08);font-size:13.5px}
+.ref:last-child{border-bottom:none}
+.ref span:first-child{color:var(--muted);flex:1}
+.ref span:last-child{color:#c9dccf;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.res{
+  background:linear-gradient(180deg,var(--card1),var(--card2));
+  border:1px solid var(--line);border-radius:16px;padding:4px 14px;margin-bottom:12px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 8px 28px rgba(0,0,0,.45);
+}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+      padding:11px 0;border-bottom:1px solid rgba(74,222,128,.08);font-size:14px}
+.line:last-child{border-bottom:none}
+.line span:first-child{color:var(--muted);flex:1}
+.line b{font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap;color:#eafff3}
+.pos{color:var(--green)!important;text-shadow:0 0 12px rgba(74,222,128,.35)}
+.neg{color:var(--red)!important;text-shadow:0 0 12px rgba(248,113,113,.3)}
+.big{padding:16px 0}
+.big span:first-child{color:#c9dccf;font-weight:600}
+.big b{font-size:23px}
+.reset{
+  width:100%;padding:13px;margin:2px 0 12px;
+  border-radius:14px;border:1px solid var(--line2);
+  background:rgba(74,222,128,.07);color:var(--green);
+  font-size:14px;font-weight:600;cursor:pointer;
+  transition:background .15s, transform .05s;
+}
+.reset:active{background:rgba(74,222,128,.18);transform:scale(.99)}
+.note{font-size:11.5px;line-height:1.45;color:#5f7568;padding:0 4px}
+.note p{margin:0 0 6px}
+
+/* ===== УЛИЧНЫЙ РЕЖИМ: повышенная читаемость на солнце ===== */
+:root {
+  --card1:rgba(12,23,17,.97);
+  --card2:rgba(5,12,8,.97);
+  --line:rgba(119,255,158,.50);
+  --line2:rgba(119,255,158,.88);
+  --txt:#ffffff;
+  --muted:#e2f1e6;
+  --green:#73ff9c;
+  --red:#ff8585;
+  --field:#07120b;
+}
+.bg{opacity:.38}
+h1{font-size:clamp(21px,5.2vw,26px);font-weight:800;color:#ffffff;text-shadow:0 1px 4px #000}
+.sub{font-size:14px;color:#e0f1e4;font-weight:600}
+.card,.res{border-width:1.5px;box-shadow:0 4px 18px rgba(0,0,0,.75)}
+.card-title{font-size:13px;color:#b3ffd0;font-weight:800;letter-spacing:.7px}
+label{font-size:15px;font-weight:700;color:#f2fff5;margin-bottom:8px}
+.row{margin-bottom:15px}
+.field{gap:9px}
+.step{
+  min-height:56px;width:54px;min-width:54px;flex-basis:54px;
+  border-width:2px;background:#123721;
+  color:#b8ffcb;font-size:30px;font-weight:800;
+  touch-action:manipulation;
+}
+.step:active{background:#24663a}
+input{
+  min-height:56px;padding:10px 8px;
+  font-size:23px;font-weight:800;
+  color:#ffffff;background:#0a1d10;
+  border:2px solid #65dc89;
+  text-shadow:0 1px 2px #000;
+}
+input:focus{border-color:#b5ffcc;box-shadow:0 0 0 3px rgba(115,255,156,.25)}
+.hint{font-size:13px;color:#e2f1e6;font-weight:600;line-height:1.5}
+.ref{font-size:14px;line-height:1.35;padding:11px 0}
+.ref span:first-child{color:#e0f1e4}
+.ref span:last-child{color:#ffffff;font-size:16px;font-weight:800}
+.line{font-size:15px;line-height:1.35;gap:10px;padding:13px 0}
+.line span:first-child{color:#f1fff5;font-weight:600}
+.line b{font-size:19px;font-weight:800;color:#ffffff}
+.res.result-highlight{border:2px solid #79f8a0;background:linear-gradient(180deg,rgba(16,52,29,.98),rgba(5,23,11,.99))}
+.big{display:flex;align-items:center;flex-wrap:wrap;gap:5px 12px;padding:16px 0}
+.big span:first-child{color:#ffffff;font-size:16px;font-weight:800}
+.big b{margin-left:auto;font-size:clamp(24px,6vw,31px);line-height:1.2;font-weight:900}
+.pos{color:#9affb8!important;text-shadow:0 0 8px rgba(115,255,156,.38)}
+.neg{color:#ffa0a0!important;text-shadow:0 0 8px rgba(255,133,133,.3)}
+.reset{min-height:54px;border:2px solid #65dc89;background:#123721;color:#dbffe5;font-size:16px;font-weight:800;touch-action:manipulation}
+.note{font-size:12.5px;color:#cbded0;line-height:1.5}
+@media(max-width:365px){
+  body{padding:14px 10px 32px}
+  .card,.res{padding-left:11px;padding-right:11px}
+  .field{gap:6px}
+  .step{width:48px;min-width:48px;flex-basis:48px}
+  .line{flex-wrap:wrap}
+  .line b{margin-left:auto}
+}
+</style>
+</head>
+<body>
+
+
+<!-- ============ ФОН: техно + фигура в капюшоне ============ -->
+<div class="bg" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="g1" cx="50%" cy="30%" r="78%">
+      <stop offset="0%" stop-color="#16271e"/>
+      <stop offset="55%" stop-color="#0b1410"/>
+      <stop offset="100%" stop-color="#040705"/>
+    </radialGradient>
+    <linearGradient id="cloak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#24392c"/>
+      <stop offset="55%" stop-color="#13201a"/>
+      <stop offset="100%" stop-color="#060b09"/>
+    </linearGradient>
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
+      <path d="M36 0H0V36" fill="none" stroke="#2f5a42" stroke-width="0.7"/>
+    </pattern>
+    <filter id="blur"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+
+
+  <rect width="400" height="900" fill="url(#g1)"/>
+  <rect width="400" height="900" fill="url(#grid)" opacity="0.32"/>
+
+
+  <circle cx="200" cy="330" r="170" fill="#1e3d2c" opacity="0.4" filter="url(#blur)"/>
+
+
+  <g>
+    <path d="M200 150
+             C 258 150 292 200 300 275
+             C 308 350 316 460 336 610
+             C 350 720 364 820 376 900
+             L 24 900
+             C 36 820 50 720 64 610
+             C 84 460 92 350 100 275
+             C 108 200 142 150 200 150 Z"
+          fill="url(#cloak)" stroke="#3f7354" stroke-width="1" stroke-opacity="0.6"/>
+    <path d="M200 150 C 250 150 276 192 281 236 L 119 236 C 124 192 150 150 200 150 Z"
+          fill="#1b2c22" stroke="#4ade80" stroke-opacity="0.15"/>
+    <path d="M200 196
+             C 236 196 258 236 260 286
+             C 262 341 244 391 200 405
+             C 156 391 138 341 140 286
+             C 142 236 164 196 200 196 Z"
+          fill="#040706" stroke="#4ade80" stroke-opacity="0.42" stroke-width="1.2"/>
+    <ellipse cx="181" cy="288" rx="9" ry="3.4" fill="#4ade80" opacity="0.9"/>
+    <ellipse cx="219" cy="288" rx="9" ry="3.4" fill="#4ade80" opacity="0.9"/>
+    <g stroke="#4ade80" stroke-opacity="0.35" fill="none" stroke-width="1">
+      <path d="M158 470 H 200 V 522 H 240 V 566"/>
+      <path d="M170 500 H 196"/>
+      <path d="M204 500 H 232"/>
+      <circle cx="158" cy="470" r="2.6" fill="#4ade80"/>
+      <circle cx="240" cy="566" r="2.6" fill="#4ade80"/>
+      <circle cx="200" cy="522" r="2.6" fill="#4ade80"/>
+    </g>
+    <g fill="none" stroke="#4ade80" stroke-opacity="0.22" stroke-width="1">
+      <polygon points="86,240 106,228 126,240 126,264 106,276 86,264"/>
+      <polygon points="298,420 314,411 330,420 330,438 314,447 298,438"/>
+      <polygon points="60,470 72,463 84,470 84,484 72,491 60,484"/>
+    </g>
+  </g>
+
+
+  <rect width="400" height="900" fill="url(#g1)" opacity="0.18"/>
+</svg>
+</div>
+
+
+<!-- ============ ПРИЛОЖЕНИЕ ============ -->
+<h1>Синтоник — калькулятор выгоды</h1>
+<p class="sub">Расчёт экономии и чистой выгоды</p>
+
+
+<div class="card">
+  <div class="row">
+    <label>Топливо за месяц, л</label>
+    <div class="field">
+      <button class="step" data-for="fuel" data-d="-100" type="button">−</button>
+      <input id="fuel" type="text" inputmode="decimal" value="1000" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="step" data-for="fuel" data-d="100" type="button">+</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>Цена топлива, ₽/л</label>
+    <div class="field">
+      <button class="step" data-for="price" data-d="-1" type="button">−</button>
+      <input id="price" type="text" inputmode="decimal" value="70" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="step" data-for="price" data-d="1" type="button">+</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>Экономия топлива, %</label>
+    <div class="field">
+      <button class="step" data-for="save" data-d="-1" type="button">−</button>
+      <input id="save" type="text" inputmode="decimal" value="20" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="step" data-for="save" data-d="1" type="button">+</button>
+    </div>
+  </div>
+</div>
+
+
+<p class="hint">Нажмите на число, чтобы ввести своё значение, или используйте кнопки − / +</p>
+
+
+<div class="card">
+  <p class="card-title">Справочные значения</p>
+  <div class="ref"><span>Цена 1 л Синтоника</span><span id="refCost">—</span></div>
+  <div class="ref"><span>Топлива на 1 л Синтоника</span><span id="refRatio">—</span></div>
+</div>
+
+
+<div class="res">
+  <div class="line"><span>Расходы без Синтоника / месяц</span><b id="r1">—</b></div>
+  <div class="line"><span>Экономия топлива / месяц</span><b id="r2">—</b></div>
+  <div class="line"><span>Затраты на Синтоник / месяц</span><b id="r3">—</b></div>
+</div>
+
+
+<div class="res result-highlight">
+  <div class="line big"><span>Чистая выгода / месяц</span><b id="r4">—</b></div>
+  <div class="line big"><span>Чистая выгода / год</span><b id="r5">—</b></div>
+</div>
+
+
+<button id="reset" class="reset" type="button">Сбросить к исходным значениям</button>
+
+
+<div class="note">
+  <p>Расход Синтоника рассчитывается пропорционально объёму топлива; фактическая закупка целыми литрами может отличаться.</p>
+  <p>Процент экономии — сценарий, не гарантия результата.</p>
+</div>
+
+
+<script>
+(function () {
+  'use strict';
+  // Автономный калькулятор: не требует интернета и сторонних библиотек.
+  function byId(id) { return document.getElementById(id); }
+  var COST = 22000;   // стоимость 1 литра присадки, ₽
+  var RATIO = 10000;  // литров топлива на 1 литр присадки
+  var ids = ['fuel', 'price', 'save'];
+  var defaults = {fuel: '1000', price: '70', save: '20'};
+
+  // iOS в локальных HTML иногда не уведомляет об изменении type=number.
+  // Используем type=text + цифровую клавиатуру, поддерживаем и точку, и запятую.
+  function parseValue(value) {
+    var str = String(value == null ? '' : value)
+      .replace(/[\s\u00a0\u202f]/g, '')
+      .replace(',', '.');
+    var v = Number(str);
+    return isFinite(v) && v > 0 ? v : 0;
+  }
+  function num(id) { return parseValue(byId(id).value); }
+  function fmt(value) {
+    // Не полагаемся на Intl/toLocaleString: некоторые просмотрщики HTML
+    // на iOS отличаются от браузера Safari.
+    var rounded = Math.round(Math.abs(value));
+    var out = String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return value < 0 ? '−' + out : out;
+  }
+  function calc() {
+    var fuel = num('fuel');
+    var price = num('price');
+    var save = num('save');
+    var base = fuel * price;
+    var saving = base * save / 100;
+    var spend = fuel / RATIO * COST;
+    var net = saving - spend;
+    var year = net * 12;
+    byId('r1').textContent = fmt(base) + ' ₽';
+    byId('r2').textContent = fmt(saving) + ' ₽';
+    byId('r3').textContent = fmt(spend) + ' ₽';
+    byId('r4').textContent = fmt(net) + ' ₽';
+    byId('r5').textContent = fmt(year) + ' ₽';
+    byId('r4').className = net >= 0 ? 'pos' : 'neg';
+    byId('r5').className = year >= 0 ? 'pos' : 'neg';
+  }
+
+  byId('refCost').textContent = fmt(COST) + ' ₽';
+  byId('refRatio').textContent = fmt(RATIO) + ' л';
+
+  var lastSignature = null;
+  function signature() {
+    return ids.map(function(id) { return byId(id).value; }).join('|');
+  }
+  function refresh() {
+    var current = signature();
+    if (current !== lastSignature) {
+      lastSignature = current;
+      calc();
+    }
+  }
+  ids.forEach(function(id) {
+    var el = byId(id);
+    ['input', 'change', 'keyup', 'paste', 'blur', 'compositionend'].forEach(function(name) {
+      el.addEventListener(name, refresh, false);
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.step'), function(btn) {
+    btn.addEventListener('click', function() {
+      var el = byId(btn.getAttribute('data-for'));
+      var increment = Number(btn.getAttribute('data-d'));
+      var next = Math.max(0, parseValue(el.value) + increment);
+      el.value = String(Math.round(next * 100) / 100);
+      refresh();
+    }, false);
+  });
+
+  byId('reset').addEventListener('click', function() {
+    ids.forEach(function(id) { byId(id).value = defaults[id]; });
+    refresh();
+  }, false);
+
+  // Страховка для iOS Quick Look / встроенного просмотра файлов:
+  // обновление при изменении значения даже без события input.
+  setInterval(refresh, 250);
+  document.addEventListener('visibilitychange', refresh, false);
+  window.addEventListener('pageshow', refresh, false);
+  refresh();
+}());
+</script>
+</body>
+</html>
