@@ -1,0 +1,435 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор расхода топлива — метод полного бака</title>
+<style>
+  :root{
+    --accent:#34d399;
+    --bg:#04070d;
+    --card:#0d141f;
+    --stroke:rgba(255,255,255,.22);
+    --text:#ffffff;
+    --muted:#c8d4e2;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:32px 16px 48px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(900px 500px at 50% -15%, rgba(52,211,153,.16), transparent 60%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{width:100%;max-width:420px}
+
+
+  h1{font-size:22px;margin:0;letter-spacing:-.4px;color:#ffffff}
+  .sub{margin:6px 0 0;font-size:13.5px;line-height:1.45;color:var(--muted)}
+
+
+  .card{
+    margin-top:20px;
+    padding:18px;
+    border-radius:22px;
+    background:var(--card);
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 20px 50px rgba(0,0,0,.6);
+  }
+
+
+  /* переключатель режима */
+  .segmented{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:4px;
+    padding:4px;
+    background:#050a12;
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:14px;
+  }
+  .segmented label{position:relative;cursor:pointer;display:block}
+  .segmented input{position:absolute;opacity:0;pointer-events:none}
+  .segmented span{
+    display:block;
+    text-align:center;
+    padding:10px 6px;
+    border-radius:10px;
+    font-size:14.5px;
+    font-weight:700;
+    color:var(--muted);
+    user-select:none;
+    transition:background .15s,color .15s,box-shadow .15s;
+  }
+  .segmented input:checked + span{
+    background:#2ee6a8;
+    color:#00160f;
+    box-shadow:0 4px 14px rgba(46,230,168,.35);
+  }
+
+
+  /* поля ввода */
+  .field{display:block;margin-top:14px}
+  .field > span{
+    display:block;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    padding:14px 14px;
+    font-size:18px;
+    font-weight:700;
+    font-family:inherit;
+    color:#ffffff;
+    background:#050a12;
+    border:1.5px solid rgba(255,255,255,.22);
+    border-radius:12px;
+    outline:none;
+    transition:border-color .15s,box-shadow .15s;
+  }
+  .field input::placeholder{color:#6b7a8d;font-weight:500}
+  .field input:focus{
+    border-color:#2ee6a8;
+    box-shadow:0 0 0 3px rgba(46,230,168,.25);
+  }
+
+
+  .calc-btn{
+    width:100%;
+    margin-top:18px;
+    padding:16px;
+    border:none;
+    border-radius:14px;
+    font-family:inherit;
+    font-size:17px;
+    font-weight:800;
+    color:#00160f;
+    background:#2ee6a8;
+    cursor:pointer;
+    box-shadow:0 8px 24px rgba(46,230,168,.3);
+    transition:transform .08s,filter .15s;
+  }
+  .calc-btn:hover{filter:brightness(1.08)}
+  .calc-btn:active{transform:scale(.985)}
+
+
+  .error{
+    margin:12px 0 0;
+    font-size:14px;
+    font-weight:700;
+    color:#ff8a9b;
+  }
+
+
+  /* результат */
+  .result{
+    margin-top:16px;
+    padding:22px 18px 18px;
+    border-radius:20px;
+    text-align:center;
+    background:#08130f;
+    border:1.5px solid rgba(46,230,168,.5);
+    box-shadow:0 18px 44px rgba(0,0,0,.6), inset 0 0 40px rgba(46,230,168,.06);
+  }
+  .result-value{
+    display:flex;
+    align-items:baseline;
+    justify-content:center;
+    gap:8px;
+    font-variant-numeric:tabular-nums;
+  }
+  #consumption{
+    font-size:clamp(52px,18vw,76px);
+    font-weight:900;
+    line-height:1;
+    letter-spacing:-2px;
+    color:#ffffff;
+    text-shadow:0 0 28px rgba(46,230,168,.75), 0 2px 4px rgba(0,0,0,.8);
+  }
+  .unit{font-size:16px;font-weight:800;color:#2ee6a8}
+  .result-meta{margin-top:10px;font-size:13.5px;font-weight:600;color:var(--muted)}
+
+
+  /* яркая плашка-напоминание */
+  .screenshot-note{
+    margin-top:18px;
+    padding:13px 14px;
+    border-radius:14px;
+    background:#ffd400;
+    color:#000000;
+    font-size:17px;
+    font-weight:900;
+    line-height:1.25;
+    text-align:center;
+    box-shadow:0 0 0 3px rgba(255,212,0,.35), 0 10px 30px rgba(255,212,0,.4);
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1);   box-shadow:0 0 0 3px rgba(255,212,0,.35), 0 10px 30px rgba(255,212,0,.4)}
+    50%    {transform:scale(1.035);box-shadow:0 0 0 6px rgba(255,212,0,.5),  0 12px 38px rgba(255,212,0,.55)}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .screenshot-note{animation:none}
+  }
+
+
+  @keyframes pop{
+    0%{opacity:0;transform:translateY(8px) scale(.96)}
+    100%{opacity:1;transform:translateY(0) scale(1)}
+  }
+  .result.pop{animation:pop .3s cubic-bezier(.2,.8,.3,1)}
+
+
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Расход топлива</h1>
+  <p class="sub">Метод полного бака: заправка до отсечки → пробег → снова до отсечки.</p>
+
+
+  <div class="card">
+    <div class="segmented">
+      <label>
+        <input type="radio" name="mode" value="odometer" checked>
+        <span>По одометру</span>
+      </label>
+      <label>
+        <input type="radio" name="mode" value="distance">
+        <span>По километражу</span>
+      </label>
+    </div>
+
+
+    <div id="odometerFields">
+      <label class="field">
+        <span>Пробег при первой заправке, км</span>
+        <input type="text" inputmode="decimal" id="odo1" placeholder="45230" autocomplete="off">
+      </label>
+      <label class="field">
+        <span>Пробег при второй заправке, км</span>
+        <input type="text" inputmode="decimal" id="odo2" placeholder="45750" autocomplete="off">
+      </label>
+    </div>
+
+
+    <div id="distanceFields" hidden>
+      <label class="field">
+        <span>Километраж между заправками, км</span>
+        <input type="text" inputmode="decimal" id="distance" placeholder="520" autocomplete="off">
+      </label>
+    </div>
+
+
+    <label class="field">
+      <span>Заправлено до отсечки, л</span>
+      <input type="text" inputmode="decimal" id="liters" placeholder="40,5" autocomplete="off">
+    </label>
+
+
+    <button class="calc-btn" id="calcBtn" type="button">Рассчитать</button>
+    <p class="error" id="error" hidden></p>
+  </div>
+
+
+  <div class="result" id="result" hidden>
+    <div class="result-value">
+      <span id="consumption">—</span>
+      <span class="unit">л/100 км</span>
+    </div>
+    <div class="result-meta" id="meta"></div>
+    <div class="screenshot-note">Сделай скрин, чтобы не забыть!!!</div>
+  </div>
+</div>
+
+
+<script>
+(function () {
+  'use strict';
+
+
+  var $ = function (id) { return document.getElementById(id); };
+  var STORAGE_KEY = 'fuelCalc.fullTank.v1';
+
+
+  var modeRadios    = Array.prototype.slice.call(document.querySelectorAll('input[name="mode"]'));
+  var odoFields     = $('odometerFields');
+  var distFields    = $('distanceFields');
+  var errorEl       = $('error');
+  var resultEl      = $('result');
+  var consumptionEl = $('consumption');
+  var metaEl        = $('meta');
+
+
+  var inputs = ['odo1', 'odo2', 'distance', 'liters'].map($);
+
+
+  function currentMode() {
+    var checked = modeRadios.filter(function (r) { return r.checked; })[0];
+    return checked ? checked.value : 'odometer';
+  }
+
+
+  function applyMode() {
+    var m = currentMode();
+    odoFields.hidden  = m !== 'odometer';
+    distFields.hidden = m !== 'distance';
+  }
+
+
+  // принимает «40,5», «40.5», «1 234»
+  function parseNum(input) {
+    var raw = input.value.replace(/[\s\u00A0']/g, '').replace(',', '.');
+    if (raw === '') return NaN;
+    var n = Number(raw);
+    return isFinite(n) ? n : NaN;
+  }
+
+
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.hidden = false;
+    resultEl.hidden = true;
+  }
+
+
+  function clearError() {
+    errorEl.hidden = true;
+    errorEl.textContent = '';
+  }
+
+
+  function fmt2(n) {
+    return n.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+
+  function fmtN(n) {
+    return n.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+  }
+
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        mode: currentMode(),
+        odo1: $('odo1').value,
+        odo2: $('odo2').value,
+        distance: $('distance').value,
+        liters: $('liters').value
+      }));
+    } catch (e) { /* приватный режим — не страшно */ }
+  }
+
+
+  function load() {
+    try {
+      var data = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (!data) return;
+      if (data.mode) {
+        modeRadios.forEach(function (r) { r.checked = (r.value === data.mode); });
+      }
+      ['odo1', 'odo2', 'distance', 'liters'].forEach(function (k) {
+        if (typeof data[k] === 'string') $(k).value = data[k];
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+
+  function calculate() {
+    clearError();
+
+
+    var liters = parseNum($('liters'));
+    var dist;
+
+
+    if (currentMode() === 'odometer') {
+      var a = parseNum($('odo1'));
+      var b = parseNum($('odo2'));
+
+
+      if (isNaN(a) || isNaN(b)) {
+        return showError('Введите оба показания одометра.');
+      }
+      dist = b - a;
+      if (dist <= 0) {
+        return showError('Второй пробег должен быть больше первого.');
+      }
+    } else {
+      dist = parseNum($('distance'));
+      if (isNaN(dist)) {
+        return showError('Введите километраж между заправками.');
+      }
+      if (dist <= 0) {
+        return showError('Километраж должен быть больше нуля.');
+      }
+    }
+
+
+    if (isNaN(liters)) {
+      return showError('Введите количество литров, залитых до отсечки.');
+    }
+    if (liters <= 0) {
+      return showError('Количество литров должно быть больше нуля.');
+    }
+
+
+    // расход = литры / пробег * 100
+    var consumption = (liters / dist) * 100;
+
+
+    consumptionEl.textContent = fmt2(consumption);
+    metaEl.textContent = 'Пробег ' + fmtN(dist) + ' км · залито ' + fmtN(liters) + ' л';
+
+
+    resultEl.hidden = false;
+    resultEl.classList.remove('pop');
+    void resultEl.offsetWidth; // перезапуск анимации
+    resultEl.classList.add('pop');
+
+
+    save();
+  }
+
+
+  modeRadios.forEach(function (r) {
+    r.addEventListener('change', function () {
+      applyMode();
+      clearError();
+      save();
+    });
+  });
+
+
+  $('calcBtn').addEventListener('click', calculate);
+
+
+  inputs.forEach(function (el) {
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        calculate();
+      }
+    });
+    el.addEventListener('input', save);
+  });
+
+
+  load();
+  applyMode();
+})();
+</script>
+</body>
+</html>
